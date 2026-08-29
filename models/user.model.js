@@ -18,8 +18,18 @@ const UserSchema = mongoose.Schema({
     password:{
         type:String , 
         required:true, 
-    }
+    },
+    preferences: {
+        categories: {
+            type: [String],
+            default: []
+        },
 
+        languages: {
+            type: [String],
+            default: []
+        }
+    }
 });
 
 const User = mongoose.model("user", UserSchema);
