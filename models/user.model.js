@@ -20,15 +20,8 @@ const UserSchema = mongoose.Schema({
         required:true, 
     },
     preferences: {
-        categories: {
-            type: [String],
-            default: []
-        },
-
-        languages: {
-            type: [String],
-            default: []
-        }
+        type: [String],
+    default: []
     }
 });
 

@@ -22,9 +22,9 @@ async function getNews(req, res) {
         }
 
         // Get preferences
-        const { categories, languages } = user.preferences;
+        const preferences = user.preferences;
 
-        if (!categories?.length || !languages?.length) {
+        if (!preferences?.length ) {
             return res.status(400).json({
                 message: "Please set your news preferences first"
             });
@@ -36,14 +36,14 @@ async function getNews(req, res) {
         const response = await axios.get(NEWS_API_URI , {
             params:{
                 apikey: NEWS_API_KEY , 
-                category: categories.join(","),
-                language: languages.join(",")
+                q: preferences.join(" OR ") , 
+                language: "en"
             }
         }) ;
 
         return res.status(200).json({
             "message":"sucessfully fetched news",
-            articles : response.data.results
+            "news" : response.data.results
         })
 
     }catch(err){

@@ -6,24 +6,33 @@ const jwt = require("jsonwebtoken");
 async function register(req, res) {
     try {
         console.log("in register function ");
-        const { name = "", email = "", password = "" } = req.body;
+        const { name = "", email = "", password = "", preferences = [] } = req.body;
         // Validate data types
-        if ( typeof name !== "string" || typeof email !== "string" || typeof password !== "string"
+        if (typeof name !== "string" || typeof email !== "string" || typeof password !== "string"
         ) {
             return res.status(400).json({
                 message: "Name, email and password must be strings"
             });
         }
 
+        
+
+        if (!Array.isArray(preferences) ) {
+            return res.status(400).json({
+                message: "preferences must be an array"
+            });
+        }
+
+
         const trimmedName = name.trim();
         const trimmedEmail = email.trim().toLowerCase();
-        const trimmedPassword = password ; 
+        const trimmedPassword = password;
         if (!trimmedName || !trimmedEmail || !trimmedPassword) {
             return res.status(400).json("All fields are Needed");
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-         if (!emailRegex.test(trimmedEmail)) {
+        if (!emailRegex.test(trimmedEmail)) {
             return res.status(400).json({
                 message: "Invalid email format"
             });
@@ -38,31 +47,32 @@ async function register(req, res) {
         if (user) {
             return res.status(400).json("user already exists with this email")
         }
-        
+
         const hashedPassword = await bcrypt.hash(trimmedPassword, 10);
         const newUser = await User.create({
             name: trimmedName,
             email: trimmedEmail,
-            password: hashedPassword
+            password: hashedPassword,
+            preferences
         });
 
         console.log("A user created sucessfully");
-        return res.status(201).json("sucessfully registered a user");
+        return res.status(200).json("sucessfully registered a user");
 
     } catch (err) {
-    console.error("Error in register function:", err);
+        console.error("Error in register function:", err);
 
-    return res.status(500).json({
-        message: "Internal server error"
-    });
-}
+        return res.status(500).json({
+            message: "Internal server error"
+        });
+    }
 }
 
 async function login(req, res) {
     try {
         console.log("in login function ");
-        const { email="", password="" } = req.body;
-        if ( typeof email !== "string" || typeof password !== "string"
+        const { email = "", password = "" } = req.body;
+        if (typeof email !== "string" || typeof password !== "string"
         ) {
             return res.status(400).json({
                 message: "email and password must be strings"
@@ -73,15 +83,15 @@ async function login(req, res) {
             return res.status(400).json("All fields are Needed");
         }
         const trimmedEmail = email.trim().toLowerCase();
-        const trimmedPassword = password ;
+        const trimmedPassword = password;
         if (!trimmedEmail || !trimmedPassword) {
             return res.status(400).json("All fields are Needed");
         }
 
         const user = await User.findOne({ email: trimmedEmail });
-        
+
         if (!user) {
-            return res.status(400).json("email or password are not correct");
+            return res.status(401).json("email or password are not correct");
         }
         const isPasswordCorrect = await bcrypt.compare(trimmedPassword, user.password);
 
@@ -90,7 +100,7 @@ async function login(req, res) {
         }
 
         const payload = {
-            userId : user._id,
+            userId: user._id,
         };
         const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY;
 
@@ -99,7 +109,7 @@ async function login(req, res) {
         console.log("token is", token);
         return res.status(200).json({
             "message": "login sucessful",
-            "token":token
+            "token": token
         });
 
     } catch (err) {

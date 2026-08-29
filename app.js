@@ -15,7 +15,7 @@ app.get("/", (req, res) => {
     res.status(200).json("news aggregator service running")
 }); 
 
-app.use("/api/v1/auth", authRoutes);
+app.use("/users", authRoutes);
 
 app.use(tokenMiddleware);
 
