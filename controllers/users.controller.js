@@ -5,8 +5,9 @@ const jwt = require("jsonwebtoken");
 
 async function register(req, res) {
     try {
-        console.log("in register function ");
+        console.log("1. entered register");
         const { name = "", email = "", password = "", preferences = [] } = req.body;
+        console.log("2. body received");
         // Validate data types
         if (typeof name !== "string" || typeof email !== "string" || typeof password !== "string"
         ) {
@@ -27,6 +28,7 @@ async function register(req, res) {
         const trimmedName = name.trim();
         const trimmedEmail = email.trim().toLowerCase();
         const trimmedPassword = password;
+        console.log("3. validation passed");
         if (!trimmedName || !trimmedEmail || !trimmedPassword) {
             return res.status(400).json("All fields are Needed");
         }
@@ -42,8 +44,11 @@ async function register(req, res) {
                 message: "Password must be at least 8 characters long"
             });
         }
+        console.log("4. before findOne");
 
         const user = await User.findOne({ email: trimmedEmail });
+        console.log("5. after findOne");
+
         if (user) {
             return res.status(400).json("user already exists with this email")
         }
@@ -96,7 +101,7 @@ async function login(req, res) {
         const isPasswordCorrect = await bcrypt.compare(trimmedPassword, user.password);
 
         if (!isPasswordCorrect) {
-            return res.status(400).json("email or password are not correct");
+            return res.status(401).json("email or password are not correct");
         }
 
         const payload = {
@@ -106,15 +111,82 @@ async function login(req, res) {
 
         const token = jwt.sign(payload, JWT_SECRET_KEY, { expiresIn: 24 * 60 * 60 });
 
-        console.log("token is", token);
         return res.status(200).json({
             "message": "login sucessful",
             "token": token
         });
 
     } catch (err) {
-        console.log("error in login function ", err)
+        console.log("error in login function ", err);
+        return res.status(500).json({
+        message: "Internal server error"
+    });
     }
 }
 
-module.exports = { login, register }
+
+async function getPreferences(req, res) {
+    try {
+        console.log("inside of getpreferences");
+        const userId = req.user.userId;
+        if (!userId) {
+            return res.status(401).json({ "message": "user unauthenticated" });
+        }
+        const user = await User.findById(userId);
+        if(!user){
+            return res.status(401).json({message:"user not foiund"});
+        }
+        const preferences = user.preferences;
+
+        return res.status(200).json({
+            "message": "Sucessfully fetched",
+            preferences
+        });
+    } catch (err) {
+        console.log("error ", err);
+        return res.status(500).json({
+        message: "Internal server error"
+    });
+    }
+
+}
+
+
+async function updatePreferences(req, res) {
+    try {
+        console.log("inside of updatePreferences");
+        const userId = req.user.userId;
+        const{ preferences} = req.body;
+        
+        if (!Array.isArray(preferences) ) {
+            return res.status(400).json({
+                message: "preferences must be an array"
+            });
+        }
+
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ "message": "User not found" });
+        }
+        user.preferences =  preferences ;
+
+        await user.save();
+        return res.status(200).json({
+            message: "Preferences updated successfully",
+            preferences: user.preferences
+        });
+
+
+    } catch (err) {
+       console.error("Error updating preferences:", err);
+
+        return res.status(500).json({
+            message: "Internal server error"
+        });
+    }
+
+}
+
+
+module.exports = { login, register , getPreferences , updatePreferences }

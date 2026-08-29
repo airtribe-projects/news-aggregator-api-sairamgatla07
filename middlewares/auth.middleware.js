@@ -11,7 +11,7 @@ async function checkToken(req, res , next){
         const token = authHeader.split(" ")[1];
         const decoded =   jwt.verify(token ,process.env.JWT_SECRET_KEY ) ; 
         req.user = decoded ;
-        console.log("decoded is ", decoded);
+
         next();
     }catch(err){
         console.log("Token verification failed ", err);
